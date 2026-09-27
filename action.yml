@@ -1,0 +1,97 @@
+name: 'agentlock scan'
+description: >-
+  Finds every MCP server, Agent Skill, and memory file an AI coding agent
+  (Claude Code, Claude Desktop, Cursor) will load automatically, flags what
+  looks risky with deterministic rule-based checks, and uploads the results
+  to GitHub code scanning.
+author: 'BlissPoint Analytics'
+branding:
+  icon: 'shield'
+  color: 'purple'
+
+# Prerequisites for the calling workflow (agentlock can't grant these to
+# itself — only the job that uses this action can):
+#   permissions:
+#     contents: read
+#     security-events: write   # required by github/codeql-action/upload-sarif
+# and a preceding `actions/checkout` step, so there's something in
+# $GITHUB_WORKSPACE for this action to scan. See this repo's own
+# .github/workflows/self-scan.yml for a complete, working example.
+
+inputs:
+  dir:
+    description: 'Directory to scan, relative to the workspace root.'
+    required: false
+    default: '.'
+  fail-on:
+    description: 'Minimum severity that fails the job: info, medium, high, critical, or none.'
+    required: false
+    default: 'high'
+  verify:
+    description: 'Also check drift against a committed agent-lock.json (see the README''s Lockfile section). Requires the repo to have run `agentlock lock` at least once.'
+    required: false
+    default: 'false'
+  upload-sarif:
+    description: 'Upload results to GitHub code scanning via github/codeql-action/upload-sarif. Set to false if you only want the exit code, or plan to upload the SARIF file yourself.'
+    required: false
+    default: 'true'
+
+outputs:
+  sarif-path:
+    description: 'Absolute path to the SARIF file this run produced.'
+    value: ${{ steps.scan.outputs.sarif-path }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    # agentlock isn't published to npm yet (see the README's Status
+    # section), so the action builds itself from the source checked out at
+    # github.action_path — the runner does this checkout automatically for
+    # any action referenced via `uses:`, no explicit step needed here.
+    - name: Install agentlock's own dependencies
+      shell: bash
+      run: npm ci
+      working-directory: ${{ github.action_path }}
+
+    - name: Build agentlock
+      shell: bash
+      run: npm run build
+      working-directory: ${{ github.action_path }}
+
+    - name: Run agentlock scan
+      id: scan
+      shell: bash
+      run: |
+        SCAN_DIR="${{ github.workspace }}"
+        if [ -n "${{ inputs.dir }}" ] && [ "${{ inputs.dir }}" != "." ]; then
+          SCAN_DIR="${{ github.workspace }}/${{ inputs.dir }}"
+        fi
+        SARIF_PATH="${{ github.workspace }}/agentlock-results.sarif"
+
+        ARGS=(scan --dir "$SCAN_DIR" --fail-on "${{ inputs.fail-on }}" --sarif "$SARIF_PATH")
+        if [ "${{ inputs.verify }}" = "true" ]; then
+          ARGS+=(--verify)
+        fi
+
+        EXIT_CODE=0
+        node "${{ github.action_path }}/dist/cli.js" "${ARGS[@]}" || EXIT_CODE=$?
+
+        echo "sarif-path=$SARIF_PATH" >> "$GITHUB_OUTPUT"
+        echo "exit-code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+
+    - name: Upload results to GitHub code scanning
+      if: ${{ inputs.upload-sarif == 'true' }}
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: ${{ steps.scan.outputs.sarif-path }}
+
+    # Deferred to its own step so the SARIF upload above still runs even
+    # when the scan itself found something at or above --fail-on.
+    - name: Fail the job if a finding met the --fail-on threshold
+      shell: bash
+      run: exit ${{ steps.scan.outputs.exit-code }}

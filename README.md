@@ -19,13 +19,12 @@ look worth a second look — in language a manager with no security
 background can act on, not just a security engineer.
 
 **Where this stands right now:** discovery, rule-based checks, a labeled
-benchmark corpus, SARIF output, a suppression file, and a lockfile for
-drift detection all work today (see "What it actually does" and
-"Benchmark results" below). What's still missing from the full Phase 1
-scope: a GitHub Action, and supply-chain hardening on our own releases
-(signing, SBOM). Read the Benchmark results section before trusting the
-precision number at face value — it comes with a real caveat, not just a
-headline percentage.
+benchmark corpus, SARIF output, a suppression file, a lockfile for drift
+detection, and a GitHub Action all work today (see "What it actually does"
+and "Benchmark results" below). What's still missing from the full Phase 1
+scope: supply-chain hardening on our own releases (signing, SBOM). Read the
+Benchmark results section before trusting the precision number at face
+value — it comes with a real caveat, not just a headline percentage.
 
 ## Install
 
@@ -52,20 +51,52 @@ agentlock suppress <rule-id> <path> --reason "<justification>"
 ```
 
 The exit code is non-zero whenever an *active* (non-suppressed) finding at
-or above `--fail-on`'s threshold exists — meant for wiring into CI once the
-GitHub Action ships, and usable today via `agentlock scan || echo "found
-something"` in your own scripts.
+or above `--fail-on`'s threshold exists — this is what the GitHub Action
+(below) wires into CI, and it's usable today via `agentlock scan || echo
+"found something"` in your own scripts.
+
+### GitHub Action
+
+```yaml
+# .github/workflows/agentlock.yml
+name: agentlock
+on: [push, pull_request]
+
+permissions:
+  contents: read
+  security-events: write   # required to upload results to code scanning
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: anthonyhammock/BlissPoint-Security@main
+        with:
+          fail-on: high     # default; also accepts info, medium, critical, none
+          # verify: true    # uncomment once you've committed agent-lock.json
+```
+
+This checks out the calling repo, builds `agentlock` from source (it isn't
+on npm yet — see Status), runs a scan, uploads the SARIF to that repo's own
+Security > Code scanning tab via `github/codeql-action/upload-sarif`, and
+fails the job if anything met the `fail-on` threshold. `security-events:
+write` has to come from the *calling* workflow — an action can't grant
+itself permissions. See `action.yml` in this repo for every input, and this
+repo's own `.github/workflows/self-scan.yml` for a complete, working
+example. One known limitation shared with any code-scanning workflow: a
+pull request from a fork runs with a read-only token by default, so the
+upload-sarif step there may fail even though the scan itself still ran.
 
 ### SARIF output
 
 `agentlock scan --sarif results.sarif` writes the same findings in
 [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/), the format
-GitHub's code scanning UI understands natively. Once the GitHub Action
-exists, it will run a scan and hand the SARIF file to
-`github/codeql-action/upload-sarif`, so findings show up as annotations on
-the relevant file and line — no separate dashboard needed. Suppressed
-findings (see below) are left out of the SARIF file entirely, same as
-they're left out of the exit-code check.
+GitHub's code scanning UI understands natively — this is what the GitHub
+Action above hands to `github/codeql-action/upload-sarif`, so findings show
+up as annotations on the relevant file and line, no separate dashboard
+needed. Suppressed findings (see below) are left out of the SARIF file
+entirely, same as they're left out of the exit-code check.
 
 One deliberate wrinkle: `TXT-*` rules map to a different OWASP category
 depending on context (a skill vs. a memory file). SARIF's rule table only
@@ -317,14 +348,18 @@ This is early, active development toward the Phase 1 scope described in
 this project's internal roadmap. Done: discovery, deterministic rule-based
 checks, a labeled benchmark corpus with a measured precision number (100%
 on this corpus — see Benchmark results above for why that number needs a
-caveat, not a celebration), SARIF output, a suppression file, and a
-lockfile for drift detection. Not done: a GitHub Action, and supply-chain
-hardening on our own releases (signing, SBOM). None of the paid tiers,
-dashboard, or badge system described anywhere else exist yet, and won't
-until precision is validated against independently-sourced samples, not
-just this project's own corpus — met-on-our-own-tests and
-actually-validated are different claims, and only the first one is true
-right now.
+caveat, not a celebration), SARIF output, a suppression file, a lockfile
+for drift detection, and a GitHub Action (which this repo also uses on
+itself — see `.github/workflows/self-scan.yml`). Not done: supply-chain
+hardening on our own releases (signing, SBOM) and publishing to npm, so the
+Action currently builds `agentlock` from source on every run rather than
+installing a released version. None of the paid tiers, dashboard, or badge
+system described anywhere else exist yet, and won't until precision is
+validated against independently-sourced samples, not just this project's
+own corpus — met-on-our-own-tests and actually-validated are different
+claims, and only the first one is true right now. No trademark has been
+filed for the `agentlock` name, and none is planned unless this becomes a
+profitable product — worth knowing before building on the name.
 
 ## Security
 

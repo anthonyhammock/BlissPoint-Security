@@ -1,0 +1,26 @@
+name: agentlock self-scan
+
+# Dogfooding: this repo scans itself with its own action on every push and
+# PR to main, plus a weekly run so drift (a dependency update, a changed
+# file) gets caught even without a code change triggering it. Findings
+# show up under this repo's own Security > Code scanning tab.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 13 * * 1' # Monday 13:00 UTC
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  self-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./
+        with:
+          fail-on: high
