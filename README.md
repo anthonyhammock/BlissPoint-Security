@@ -19,12 +19,13 @@ look worth a second look — in language a manager with no security
 background can act on, not just a security engineer.
 
 **Where this stands right now:** discovery, rule-based checks, a labeled
-benchmark corpus, SARIF output, and a suppression file all work today (see
-"What it actually does" and "Benchmark results" below). What's still
-missing from the full Phase 1 scope: the lockfile, a GitHub Action, and
-supply-chain hardening on our own releases (signing, SBOM). Read the
-Benchmark results section before trusting the precision number at face
-value — it comes with a real caveat, not just a headline percentage.
+benchmark corpus, SARIF output, a suppression file, and a lockfile for
+drift detection all work today (see "What it actually does" and
+"Benchmark results" below). What's still missing from the full Phase 1
+scope: a GitHub Action, and supply-chain hardening on our own releases
+(signing, SBOM). Read the Benchmark results section before trusting the
+precision number at face value — it comes with a real caveat, not just a
+headline percentage.
 
 ## Install
 
@@ -44,7 +45,9 @@ agentlock scan --dir ./somewhere        # scan a different project directory
 agentlock scan --fail-on critical       # only exit non-zero for critical findings (default: high)
 agentlock scan --fail-on none           # always exit 0, regardless of findings (for a first look)
 agentlock scan --sarif results.sarif    # also write results in SARIF 2.1.0 to this file
+agentlock scan --verify                 # also flag drift against agent-lock.json (see Lockfile below)
 
+agentlock lock [--dir ./somewhere]      # record a baseline of what's here now
 agentlock suppress <rule-id> <path> --reason "<justification>"
 ```
 
@@ -108,6 +111,46 @@ Example `.agentlock-suppressions.json`:
   ]
 }
 ```
+
+### Lockfile — catching drift after the fact
+
+The rule checks above are point-in-time: they look at what's on disk right
+now. They can't tell you that an MCP server you reviewed and approved last
+month has since had its script edited, that a skill you trusted got a new
+file quietly added to it, or that a memory file has been appended to since
+you last read it — a version pin (`MCP-CFG-001`) stops a *package* from
+rug-pulling you, but nothing stops the file itself from changing on disk.
+The lockfile closes that gap:
+
+```bash
+agentlock lock                 # record a content-hash baseline of everything found now
+agentlock scan --verify        # compare the current state against that baseline
+```
+
+`agentlock lock` writes `agent-lock.json` at the project root — a sha256 of
+every **project-scoped** MCP config, Agent Skill, and memory file. Commit
+it, the same way you'd commit a dependency lockfile. `agentlock scan
+--verify` then diffs the current inventory against it and reports, as
+ordinary findings (suppressible, SARIF-exportable, counted toward
+`--fail-on`, same as any other finding):
+
+| Rule | Severity | Fires when | Maps to |
+|---|---|---|---|
+| `LOCK-001` | medium | An item exists now that wasn't in the lockfile — never reviewed | AST-02 |
+| `LOCK-002` | high | An item's content no longer matches its locked hash — the "rug pull" case | AST-07 |
+| `LOCK-003` | info | A locked item is no longer found — likely just deleted or renamed | *(none)* |
+
+Only project-scoped items are ever recorded or checked — a machine-scope
+config like `~/.claude.json` differs by design on every teammate's machine,
+so putting it in a file meant to be committed and shared would produce
+constant, meaningless diffs on every other machine that runs `--verify`.
+That's a deliberate scope limit, not an oversight: machine-scope drift is a
+real concern, just not one a shared, committed lockfile is the right tool
+for.
+
+Running `scan --dir <path>` without an `agent-lock.json` present and
+`--verify` passed prints a warning and skips the drift check rather than
+failing — there's nothing to compare against yet until you run `lock` once.
 
 ## Example output
 
@@ -274,13 +317,14 @@ This is early, active development toward the Phase 1 scope described in
 this project's internal roadmap. Done: discovery, deterministic rule-based
 checks, a labeled benchmark corpus with a measured precision number (100%
 on this corpus — see Benchmark results above for why that number needs a
-caveat, not a celebration), SARIF output, and a suppression file. Not done:
-the lockfile, a GitHub Action, and supply-chain hardening on our own
-releases (signing, SBOM). None of the paid tiers, dashboard, or badge
-system described anywhere else exist yet, and won't until precision is
-validated against independently-sourced samples, not just this project's
-own corpus — met-on-our-own-tests and actually-validated are different
-claims, and only the first one is true right now.
+caveat, not a celebration), SARIF output, a suppression file, and a
+lockfile for drift detection. Not done: a GitHub Action, and supply-chain
+hardening on our own releases (signing, SBOM). None of the paid tiers,
+dashboard, or badge system described anywhere else exist yet, and won't
+until precision is validated against independently-sourced samples, not
+just this project's own corpus — met-on-our-own-tests and
+actually-validated are different claims, and only the first one is true
+right now.
 
 ## Security
 

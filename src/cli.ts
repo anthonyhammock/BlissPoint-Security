@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 import { writeFileSync } from 'node:fs'
 import { buildInventory, defaultRoots } from './discovery/index.js'
-import { runChecks, type Finding } from './rules/index.js'
+import { runChecks, sortFindings, type Finding } from './rules/index.js'
 import { formatInventoryHuman, formatScanResultHuman, formatSuppressedHuman } from './output/human.js'
 import { toSarif } from './output/sarif.js'
 import { loadSuppressions, applySuppressions, addSuppression, SUPPRESSIONS_FILENAME } from './suppressions.js'
+import { buildLockEntries, diffLockfile, loadLockfile, lockDiffToFindings, writeLockfile, LOCKFILE_FILENAME } from './lockfile.js'
 
 const SEVERITY_ORDER: Finding['severity'][] = ['info', 'medium', 'high', 'critical']
 
@@ -13,6 +14,7 @@ function printUsage(): void {
 
 Usage:
   agentlock scan [options]
+  agentlock lock [--dir <path>]
   agentlock suppress <rule-id> <path> --reason "<justification>"
 
 scan options:
@@ -20,6 +22,7 @@ scan options:
   --sarif <path>       Also write results in SARIF 2.1.0 format to this file (for GitHub code scanning).
   --dir <path>        Scan a project directory other than the current one. Defaults to the current directory.
   --fail-on <level>   Exit non-zero if any active (non-suppressed) finding is at or above this severity: info, medium, high, critical. Default: high. Use "none" to always exit 0.
+  --verify            Compare against ${LOCKFILE_FILENAME} (see "lock" below) and flag anything new, changed, or missing since the last baseline.
   -h, --help          Show this help.
 
 What "scan" does:
@@ -31,6 +34,15 @@ What "scan" does:
   mapping, the exact file and line, a plain-English explanation, and a fix.
   This tool never executes anything it scans, and never claims something is
   "safe" — only that no known issue was found by the current rules.
+
+What "lock" does:
+  Records a content hash of every project-scoped MCP config, Agent Skill,
+  and memory file to ${LOCKFILE_FILENAME}, as a baseline of what you've
+  reviewed. Run "agentlock scan --verify" later to catch anything that
+  showed up, changed, or disappeared since — including a "rug pull" where
+  something you already approved quietly changes on disk. Commit this file
+  so the baseline is shared and checked in CI, the same way you would a
+  dependency lockfile.
 
 What "suppress" does:
   Appends an entry to ${SUPPRESSIONS_FILENAME} at the project root, so a
@@ -46,6 +58,11 @@ interface ScanArgs {
   sarif: string | null
   dir: string | null
   failOn: Finding['severity'] | 'none'
+  verify: boolean
+}
+
+interface LockArgs {
+  dir: string | null
 }
 
 interface SuppressArgs {
@@ -56,12 +73,13 @@ interface SuppressArgs {
 }
 
 function parseScanArgs(argv: string[]): ScanArgs {
-  const result: ScanArgs = { json: false, sarif: null, dir: null, failOn: 'high' }
+  const result: ScanArgs = { json: false, sarif: null, dir: null, failOn: 'high', verify: false }
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i]
     if (arg === '--json') result.json = true
     else if (arg === '--sarif') result.sarif = argv[++i] ?? null
     else if (arg === '--dir') result.dir = argv[++i] ?? null
+    else if (arg === '--verify') result.verify = true
     else if (arg === '--fail-on') {
       const value = argv[++i]
       if (value === 'none' || value === 'info' || value === 'medium' || value === 'high' || value === 'critical') {
@@ -89,6 +107,14 @@ function parseSuppressArgs(argv: string[]): SuppressArgs {
   return result
 }
 
+function parseLockArgs(argv: string[]): LockArgs {
+  const result: LockArgs = { dir: null }
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === '--dir') result.dir = argv[++i] ?? null
+  }
+  return result
+}
+
 function shouldFail(findings: Finding[], failOn: ScanArgs['failOn']): boolean {
   if (failOn === 'none') return false
   const threshold = SEVERITY_ORDER.indexOf(failOn)
@@ -101,6 +127,17 @@ function runScan(argv: string[]): void {
 
   const inventory = buildInventory(defaultRoots(projectDir))
   const scanResult = runChecks(inventory)
+
+  if (args.verify) {
+    const { entries: lockEntries, errors: lockErrors } = loadLockfile(projectDir)
+    for (const error of lockErrors) console.error(`Warning: ${error}`)
+    if (lockEntries.length === 0 && lockErrors.length === 0) {
+      console.error(`Warning: no ${LOCKFILE_FILENAME} found — run "agentlock lock" first to create a baseline before drift can be checked.`)
+    } else {
+      const diff = diffLockfile(inventory, lockEntries)
+      scanResult.findings = sortFindings([...scanResult.findings, ...lockDiffToFindings(diff, projectDir)])
+    }
+  }
 
   const { entries: suppressionEntries, errors: suppressionErrors } = loadSuppressions(projectDir)
   const { active, suppressed } = applySuppressions(scanResult.findings, suppressionEntries, projectDir)
@@ -146,6 +183,22 @@ function runSuppress(argv: string[]): void {
   console.log(`Added a suppression for ${args.ruleId} on ${args.path} to ${SUPPRESSIONS_FILENAME}.`)
 }
 
+function runLock(argv: string[]): void {
+  const args = parseLockArgs(argv)
+  const projectDir = args.dir ?? process.cwd()
+
+  const inventory = buildInventory(defaultRoots(projectDir))
+  const entries = buildLockEntries(inventory)
+  writeLockfile(projectDir, entries)
+
+  const counts = new Map<string, number>()
+  for (const entry of entries) counts.set(entry.kind, (counts.get(entry.kind) ?? 0) + 1)
+  const summary = [...counts.entries()].map(([kind, count]) => `${count} ${kind}`).join(', ') || 'nothing (no project-scoped items found)'
+
+  console.log(`Locked ${entries.length} item(s) to ${LOCKFILE_FILENAME}: ${summary}.`)
+  console.log('Only project-scoped items are recorded — machine-only configs are intentionally left out (see the README).')
+}
+
 function main(): void {
   const argv = process.argv.slice(2)
   // Removed by index, not by value — a --dir argument whose value happens
@@ -163,6 +216,8 @@ function main(): void {
 
   if (command === 'scan') {
     runScan(rest)
+  } else if (command === 'lock') {
+    runLock(rest)
   } else if (command === 'suppress') {
     runSuppress(rest)
   } else {

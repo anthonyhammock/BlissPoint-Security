@@ -96,17 +96,25 @@ export interface ScanResult {
 
 const SEVERITY_ORDER: Record<Finding['severity'], number> = { critical: 0, high: 1, medium: 2, info: 3 }
 
-export function runChecks(inventory: Inventory): ScanResult {
-  const findings: Finding[] = []
-  for (const item of inventory.items) {
-    findings.push(...checkItem(item))
-  }
-  findings.sort((a, b) => {
+/**
+ * Exported so callers that merge in findings from outside the deterministic
+ * rule set (e.g. the CLI adding lockfile drift findings) can restore the
+ * same ordering, instead of re-implementing or forgetting this comparator.
+ */
+export function sortFindings(findings: Finding[]): Finding[] {
+  return [...findings].sort((a, b) => {
     const bySeverity = SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]
     if (bySeverity !== 0) return bySeverity
     if (a.path !== b.path) return a.path.localeCompare(b.path)
     if ((a.line ?? 0) !== (b.line ?? 0)) return (a.line ?? 0) - (b.line ?? 0)
     return a.ruleId.localeCompare(b.ruleId)
   })
-  return { rulesVersion: RULES_VERSION, generatedAt: inventory.generatedAt, projectDir: inventory.projectDir, findings }
+}
+
+export function runChecks(inventory: Inventory): ScanResult {
+  const findings: Finding[] = []
+  for (const item of inventory.items) {
+    findings.push(...checkItem(item))
+  }
+  return { rulesVersion: RULES_VERSION, generatedAt: inventory.generatedAt, projectDir: inventory.projectDir, findings: sortFindings(findings) }
 }
