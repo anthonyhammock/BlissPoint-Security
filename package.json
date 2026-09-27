@@ -1,0 +1,27 @@
+{
+  "name": "agentlock",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "description": "A local-first scanner and lockfile for everything an AI coding agent loads: MCP servers, Agent Skills, config files, and memory files. Finds malicious or vulnerable components before they run.",
+  "license": "MIT",
+  "bin": {
+    "agentlock": "./bin/agentlock.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^5.0.2"
+  }
+}
