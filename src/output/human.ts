@@ -4,6 +4,7 @@
 // and understand what their AI agent is trusting, without translation.
 
 import type { DiscoveredItem, Inventory } from '../discovery/index.js'
+import type { Finding, ScanResult } from '../rules/index.js'
 
 const CLIENT_LABELS: Record<DiscoveredItem['client'], string> = {
   'claude-code': 'Claude Code',
@@ -53,9 +54,9 @@ export function formatInventoryHuman(inventory: Inventory): string {
     'time — MCP server tools, Agent Skills, and files the agent treats as'
   )
   lines.push(
-    'standing instructions. This is the full list. Nothing here has been'
+    'standing instructions. This is the full list. See the findings below for'
   )
-  lines.push('judged safe or unsafe yet — that check is the next phase.')
+  lines.push('what, if anything, looks worth a closer look.')
   lines.push('')
   lines.push(`Scanned: ${inventory.projectDir}`)
   lines.push(`At:      ${inventory.generatedAt}`)
@@ -93,6 +94,63 @@ export function formatInventoryHuman(inventory: Inventory): string {
   )
   lines.push('')
   lines.push('Kinds found, for reference: ' + Object.values(KIND_LABELS).join(', ') + '.')
+
+  return lines.join('\n')
+}
+
+const SEVERITY_LABELS: Record<Finding['severity'], string> = {
+  critical: 'CRITICAL',
+  high: 'HIGH',
+  medium: 'MEDIUM',
+  info: 'INFO',
+}
+
+function formatFinding(finding: Finding): string {
+  const location = finding.line ? `${finding.path}:${finding.line}` : finding.path
+  const lines = [
+    `[${SEVERITY_LABELS[finding.severity]}] ${finding.ruleId} — ${finding.title}`,
+    `  ${location}`,
+    `  What this means: ${finding.plainEnglish}`,
+    `  What to do: ${finding.fix}`,
+  ]
+  if (finding.snippet) lines.push(`  Matched: ${finding.snippet}`)
+  if (finding.owasp.length > 0) lines.push(`  Maps to: ${finding.owasp.join(', ')}`)
+  return lines.join('\n')
+}
+
+/**
+ * Per the project's own wording rule: never "safe" or "secure," anywhere in
+ * this output, including the zero-findings case.
+ */
+export function formatScanResultHuman(result: ScanResult): string {
+  const lines: string[] = []
+  lines.push('')
+  lines.push(`Findings (rules v${result.rulesVersion})`)
+  lines.push('='.repeat(72))
+
+  if (result.findings.length === 0) {
+    lines.push('')
+    lines.push(`No known issues found by rules v${result.rulesVersion}.`)
+    lines.push('This reflects what today\'s rules check for, not a guarantee nothing is wrong.')
+    return lines.join('\n')
+  }
+
+  lines.push('')
+  for (const finding of result.findings) {
+    lines.push(formatFinding(finding))
+    lines.push('')
+  }
+
+  const counts = result.findings.reduce(
+    (acc, f) => {
+      acc[f.severity]++
+      return acc
+    },
+    { critical: 0, high: 0, medium: 0, info: 0 } as Record<Finding['severity'], number>
+  )
+  lines.push(
+    `Summary: ${counts.critical} critical, ${counts.high} high, ${counts.medium} medium, ${counts.info} info.`
+  )
 
   return lines.join('\n')
 }

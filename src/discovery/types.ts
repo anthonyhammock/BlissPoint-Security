@@ -37,6 +37,15 @@ export interface DiscoveredMcpConfig extends DiscoveredArtifactBase {
    * something a strict parser chokes on).
    */
   parseError?: string
+  /**
+   * The full parsed JSON, when parsing succeeded. McpServerEntry only
+   * projects the fields the discovery layer knows to expect; rule checks
+   * that need to look for arbitrary keys (auto-approve flags, trust
+   * settings — anything a client might add that this adapter doesn't model
+   * yet) work against this instead of trying to extend the narrow type for
+   * every new key a client invents.
+   */
+  raw?: unknown
 }
 
 export interface DiscoveredSkill extends DiscoveredArtifactBase {

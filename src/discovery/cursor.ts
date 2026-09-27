@@ -25,7 +25,7 @@ function discoverMcpConfig(path: string, scope: 'project' | 'user'): DiscoveredI
   if (!parsed.ok) {
     return { kind: 'mcp-config', client: 'cursor', scope, path, servers: [], parseError: parsed.error }
   }
-  return { kind: 'mcp-config', client: 'cursor', scope, path, servers: parsed.servers }
+  return { kind: 'mcp-config', client: 'cursor', scope, path, servers: parsed.servers, raw: result.data }
 }
 
 function userConfigPathFor(roots: DiscoveryRoots): string {

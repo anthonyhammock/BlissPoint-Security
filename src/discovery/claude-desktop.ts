@@ -44,6 +44,6 @@ export const claudeDesktopAdapter: ClientAdapter = {
     if (!parsed.ok) {
       return [{ kind: 'mcp-config', client: 'claude-desktop', scope: 'user', path, servers: [], parseError: parsed.error }]
     }
-    return [{ kind: 'mcp-config', client: 'claude-desktop', scope: 'user', path, servers: parsed.servers }]
+    return [{ kind: 'mcp-config', client: 'claude-desktop', scope: 'user', path, servers: parsed.servers, raw: result.data }]
   },
 }

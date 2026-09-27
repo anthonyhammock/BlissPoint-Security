@@ -28,7 +28,7 @@ function discoverMcpConfig(path: string, client: 'claude-code', scope: 'project'
   if (!parsed.ok) {
     return { kind: 'mcp-config', client, scope, path, servers: [], parseError: parsed.error }
   }
-  return { kind: 'mcp-config', client, scope, path, servers: parsed.servers }
+  return { kind: 'mcp-config', client, scope, path, servers: parsed.servers, raw: result.data }
 }
 
 function discoverSkills(skillsDir: string, client: 'claude-code', scope: 'project' | 'user'): DiscoveredItem[] {
