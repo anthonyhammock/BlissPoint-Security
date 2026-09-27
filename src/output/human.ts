@@ -5,6 +5,7 @@
 
 import type { DiscoveredItem, Inventory } from '../discovery/index.js'
 import type { Finding, ScanResult } from '../rules/index.js'
+import type { SuppressionEntry } from '../suppressions.js'
 
 const CLIENT_LABELS: Record<DiscoveredItem['client'], string> = {
   'claude-code': 'Claude Code',
@@ -152,5 +153,14 @@ export function formatScanResultHuman(result: ScanResult): string {
     `Summary: ${counts.critical} critical, ${counts.high} high, ${counts.medium} medium, ${counts.info} info.`
   )
 
+  return lines.join('\n')
+}
+
+export function formatSuppressedHuman(suppressed: { finding: Finding; entry: SuppressionEntry }[]): string {
+  const lines: string[] = ['', `Suppressed (${suppressed.length}) — see .agentlock-suppressions.json`, '='.repeat(72)]
+  for (const { finding, entry } of suppressed) {
+    lines.push(`  ${finding.ruleId} on ${entry.path}`)
+    lines.push(`    Reason: ${entry.justification}`)
+  }
   return lines.join('\n')
 }

@@ -18,11 +18,11 @@ persistently.
 look worth a second look — in language a manager with no security
 background can act on, not just a security engineer.
 
-**Where this stands right now:** discovery, rule-based checks, and a
-labeled benchmark corpus all work today (see "What it actually does" and
-"Benchmark results" below). What's still missing from the full Phase 1
-scope: SARIF output, a suppression file, the lockfile, a GitHub Action,
-and supply-chain hardening on our own releases (signing, SBOM). Read the
+**Where this stands right now:** discovery, rule-based checks, a labeled
+benchmark corpus, SARIF output, and a suppression file all work today (see
+"What it actually does" and "Benchmark results" below). What's still
+missing from the full Phase 1 scope: the lockfile, a GitHub Action, and
+supply-chain hardening on our own releases (signing, SBOM). Read the
 Benchmark results section before trusting the precision number at face
 value — it comes with a real caveat, not just a headline percentage.
 
@@ -38,17 +38,76 @@ install step is needed; `npx` fetches and runs it.)
 ## Usage
 
 ```bash
-agentlock scan                     # human-readable inventory + findings for the current directory
-agentlock scan --json              # machine-readable inventory + findings
-agentlock scan --dir ./somewhere   # scan a different project directory
-agentlock scan --fail-on critical  # only exit non-zero for critical findings (default: high)
-agentlock scan --fail-on none      # always exit 0, regardless of findings (for a first look)
+agentlock scan                          # human-readable inventory + findings for the current directory
+agentlock scan --json                   # machine-readable inventory + findings
+agentlock scan --dir ./somewhere        # scan a different project directory
+agentlock scan --fail-on critical       # only exit non-zero for critical findings (default: high)
+agentlock scan --fail-on none           # always exit 0, regardless of findings (for a first look)
+agentlock scan --sarif results.sarif    # also write results in SARIF 2.1.0 to this file
+
+agentlock suppress <rule-id> <path> --reason "<justification>"
 ```
 
-The exit code is non-zero whenever a finding at or above `--fail-on`'s
-threshold exists — meant for wiring into CI once the GitHub Action ships,
-and usable today via `agentlock scan || echo "found something"` in your own
-scripts.
+The exit code is non-zero whenever an *active* (non-suppressed) finding at
+or above `--fail-on`'s threshold exists — meant for wiring into CI once the
+GitHub Action ships, and usable today via `agentlock scan || echo "found
+something"` in your own scripts.
+
+### SARIF output
+
+`agentlock scan --sarif results.sarif` writes the same findings in
+[SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/), the format
+GitHub's code scanning UI understands natively. Once the GitHub Action
+exists, it will run a scan and hand the SARIF file to
+`github/codeql-action/upload-sarif`, so findings show up as annotations on
+the relevant file and line — no separate dashboard needed. Suppressed
+findings (see below) are left out of the SARIF file entirely, same as
+they're left out of the exit-code check.
+
+One deliberate wrinkle: `TXT-*` rules map to a different OWASP category
+depending on context (a skill vs. a memory file). SARIF's rule table only
+supports one static entry per rule ID, so the rule-level entry omits OWASP
+and each individual result carries its own mapping in
+`properties.owasp` instead.
+
+### Suppressing a finding
+
+```bash
+agentlock suppress TXT-002 docs/prompt-injection-writeup.md --reason "Documentation about the attack, not an instruction."
+```
+
+This appends an entry to `.agentlock-suppressions.json` at the project
+root — commit that file so the suppression applies in CI too. Each entry
+matches one rule ID against one file (by path relative to the project
+root), never a glob: this file is meant to be reviewable by an auditor, and
+a wildcard suppression is easy to miss the implications of. A
+`justification` is required; an entry without one is reported as a warning
+and ignored rather than silently applied or silently dropped. A suppressed
+finding still shows up in a scan's output (both human and `--json`), just
+separated out from the active findings that count toward `--fail-on` and
+SARIF:
+
+```
+Suppressed (1) — see .agentlock-suppressions.json
+========================================================================
+  TXT-002 on docs/prompt-injection-writeup.md
+    Reason: Documentation about the attack, not an instruction.
+```
+
+Example `.agentlock-suppressions.json`:
+
+```json
+{
+  "suppressions": [
+    {
+      "ruleId": "TXT-002",
+      "path": "docs/prompt-injection-writeup.md",
+      "justification": "Documentation about the attack, not an instruction.",
+      "addedAt": "2026-09-27"
+    }
+  ]
+}
+```
 
 ## Example output
 
@@ -213,10 +272,10 @@ will ever see. Three things are true at once:
 
 This is early, active development toward the Phase 1 scope described in
 this project's internal roadmap. Done: discovery, deterministic rule-based
-checks, and a labeled benchmark corpus with a measured precision number
-(100% on this corpus — see Benchmark results above for why that number
-needs a caveat, not a celebration). Not done: SARIF output, a suppression
-file, the lockfile, a GitHub Action, and supply-chain hardening on our own
+checks, a labeled benchmark corpus with a measured precision number (100%
+on this corpus — see Benchmark results above for why that number needs a
+caveat, not a celebration), SARIF output, and a suppression file. Not done:
+the lockfile, a GitHub Action, and supply-chain hardening on our own
 releases (signing, SBOM). None of the paid tiers, dashboard, or badge
 system described anywhere else exist yet, and won't until precision is
 validated against independently-sourced samples, not just this project's
