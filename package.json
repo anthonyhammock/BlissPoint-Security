@@ -16,7 +16,8 @@
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "generate-corpus": "node scripts/generate-corpus.mjs"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

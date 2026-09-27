@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "brave-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "brave-search-mcp@1.0.0"
+      ]
+    }
+  }
+}

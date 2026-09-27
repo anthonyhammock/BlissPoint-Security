@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-server-postgres@0.9.0",
+        "postgres://localhost/app"
+      ]
+    }
+  }
+}

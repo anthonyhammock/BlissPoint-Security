@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "notes": {
+      "command": "npx",
+      "args": [
+        "--yes",
+        "notes-mcp"
+      ]
+    }
+  }
+}

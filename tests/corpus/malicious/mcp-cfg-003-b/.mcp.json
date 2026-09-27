@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "files": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "fs-mcp@1.0.0"
+      ],
+      "alwaysAllow": [
+        "read_file",
+        "write_file"
+      ]
+    }
+  }
+}

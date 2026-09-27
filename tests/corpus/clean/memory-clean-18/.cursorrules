@@ -1,0 +1,3 @@
+# Linting rules
+
+Run eslint --fix before committing; CI rejects lint warnings.

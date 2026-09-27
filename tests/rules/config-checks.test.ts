@@ -68,6 +68,18 @@ describe('checkMcpConfig — hardcoded secrets', () => {
     expect(findings.map((f) => f.ruleId)).not.toContain('MCP-CFG-002')
   })
 
+  it('flags a token embedded in a URL query parameter', () => {
+    const findings = checkMcpConfig(
+      config({ servers: [{ name: 'x', url: `https://example.com/mcp?api_key=${'a'.repeat(24)}` }] })
+    )
+    expect(findings.map((f) => f.ruleId)).toContain('MCP-CFG-002')
+  })
+
+  it('does not flag a URL with no query string', () => {
+    const findings = checkMcpConfig(config({ servers: [{ name: 'x', url: 'https://example.com/mcp' }] }))
+    expect(findings.map((f) => f.ruleId)).not.toContain('MCP-CFG-002')
+  })
+
   it('does not flag a non-secret-shaped long value even with a suggestive key name', () => {
     const findings = checkMcpConfig(
       config({ servers: [{ name: 'x', command: 'node', env: { AUTH_MODE: 'oauth with pkce and refresh tokens' } }] })

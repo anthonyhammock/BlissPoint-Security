@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "notion": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "notion-mcp@1.3.0"
+      ]
+    }
+  }
+}

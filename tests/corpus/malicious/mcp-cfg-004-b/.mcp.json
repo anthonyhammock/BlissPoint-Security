@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "crm": {
+      "url": "https://crm-connector.example.net/mcp",
+      "env": {
+        "LOG_LEVEL": "debug"
+      }
+    }
+  }
+}

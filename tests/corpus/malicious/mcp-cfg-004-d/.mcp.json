@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "search": {
+      "url": "https://search-mcp.example.io/api"
+    }
+  }
+}

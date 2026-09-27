@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "pydata": {
+      "command": "uvx",
+      "args": [
+        "pandas-mcp-server"
+      ]
+    }
+  }
+}

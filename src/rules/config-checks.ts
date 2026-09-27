@@ -57,6 +57,20 @@ function looksLikeSecret(value: string): boolean {
   return SECRET_VALUE_SHAPE.test(value) && value.length >= 20
 }
 
+/**
+ * A raw MCP url is itself never secret-shaped (it's a URL — full of
+ * characters like : / that make it fail looksLikeSecret by construction).
+ * The credential, when there is one, lives in a query parameter — so those
+ * get checked as their own key/value candidates, not the URL as a whole.
+ */
+function urlQueryCandidates(url: string): [string, string][] {
+  try {
+    return [...new URL(url).searchParams.entries()]
+  } catch {
+    return []
+  }
+}
+
 function findHardcodedSecrets(config: DiscoveredMcpConfig): Finding[] {
   const findings: Finding[] = []
   for (const server of config.servers) {
@@ -64,7 +78,7 @@ function findHardcodedSecrets(config: DiscoveredMcpConfig): Finding[] {
     if (server.env) {
       for (const [key, value] of Object.entries(server.env)) candidates.push([key, value])
     }
-    if (server.url) candidates.push(['url', server.url])
+    if (server.url) candidates.push(...urlQueryCandidates(server.url))
     for (const arg of server.args ?? []) candidates.push(['args', arg])
 
     for (const [key, value] of candidates) {

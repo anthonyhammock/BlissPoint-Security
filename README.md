@@ -18,14 +18,13 @@ persistently.
 look worth a second look — in language a manager with no security
 background can act on, not just a security engineer.
 
-**Where this stands right now:** discovery and rule-based checks both work
-today (see "What it actually does" below for the full rule list). What's
-still missing from the full Phase 1 scope: a labeled benchmark corpus with
-a measured precision number, SARIF output, a suppression file, the
-lockfile, a GitHub Action, and supply-chain hardening on our own releases
-(signing, SBOM). Until the precision number exists and is published here,
-treat every finding as a lead to check, not a verified result — see
-Limitations below.
+**Where this stands right now:** discovery, rule-based checks, and a
+labeled benchmark corpus all work today (see "What it actually does" and
+"Benchmark results" below). What's still missing from the full Phase 1
+scope: SARIF output, a suppression file, the lockfile, a GitHub Action,
+and supply-chain hardening on our own releases (signing, SBOM). Read the
+Benchmark results section before trusting the precision number at face
+value — it comes with a real caveat, not just a headline percentage.
 
 ## Install
 
@@ -138,18 +137,53 @@ detection (that last one needs semantic comparison, which is explicitly an
 optional LLM-assisted feature per the architecture, not a Phase 1
 deterministic-rules item).
 
+## Benchmark results
+
+Measured by running `npm test` against the labeled corpus in
+`tests/corpus/` (56 malicious samples, 101 clean samples — regenerate with
+`npm run generate-corpus`, see that script for how each sample was built):
+
+| Metric | Result |
+|---|---|
+| Precision | **100.0%** (56/56 true positives, 0 false positives) |
+| Recall | **100.0%** (56/56 malicious samples caught) |
+| Corpus size | 56 malicious, 101 clean (target was ≥50 / ≥100) |
+
+**Read this number honestly, not as a headline.** This corpus was written
+by the same person who wrote the rules, specifically to exercise each rule
+— there's real circularity here, not independent validation. A rule author
+testing against their own examples is close to the easiest case a scanner
+will ever see. Three things are true at once:
+
+1. The 90% precision target from the roadmap is met on this corpus, and
+   the methodology (a real labeled dataset, run through the real engine,
+   with the actual numbers reported) is the right one.
+2. **A more meaningful data point already exists, and it's not 100%:**
+   manually testing the scanner against real, unmodified third-party skill
+   code (not part of this corpus) surfaced a real false positive during
+   development — see the `SRC-003` note in Limitations below. That's one
+   real miss found from a handful of manual spot-checks against code this
+   corpus doesn't contain, which says more about real-world precision than
+   a clean number on self-authored samples does.
+3. **The real test is independently-sourced samples** — the malicious
+   side of a future corpus revision should pull from actual disclosed
+   vulnerable MCP servers and real ClawHub-style poisoned skills (Section
+   2's sources), and the clean side should pull from popular real-world
+   skills/servers this project didn't write. That's the next revision of
+   this benchmark, not this one.
+
 ## Limitations (read this before trusting a scan)
 
-- **No measured precision number yet.** The ≥90% precision target from the
-  roadmap needs a labeled benchmark corpus (≥50 malicious samples, ≥100
-  clean samples) that doesn't exist yet. What does exist: every rule was
-  tested against both planted-malicious fixtures and real, unmodified
-  third-party skill code, and at least one real false positive was found
-  and fixed this way (`SRC-003`'s path-traversal check originally fired on
-  ordinary numeric loop indices like `${i + 1}` in real Anthropic-published
-  skill code — it now requires the interpolated value to look path-related
-  by name). That's evidence of a real methodology being followed, not a
-  substitute for the actual benchmark and its published number.
+- **The measured precision number is real but self-graded.** See Benchmark
+  results above — 100% on a corpus this project wrote itself is a weaker
+  claim than 100% on independently-sourced samples, and shouldn't be read
+  as the latter. The one real false positive found so far came from manual
+  testing against actual third-party skill code, not from this corpus:
+  `SRC-003`'s path-traversal check originally fired on ordinary numeric
+  loop indices like `${i + 1}` in real Anthropic-published skill code — it
+  now requires the interpolated value to look path-related by name. That
+  fix is real; the corpus's 100% is not yet independent confirmation that
+  there isn't another one like it.
 - **Regex-based checks are inherently approximate.** `SRC-001`/`SRC-002`/`SRC-003`
   can both miss real vulnerabilities written in an unanticipated style and,
   less often now, still flag something benign. Treat every finding as "worth
@@ -178,12 +212,16 @@ deterministic-rules item).
 ## Status
 
 This is early, active development toward the Phase 1 scope described in
-this project's internal roadmap (discovery, deterministic rule-based
-checks, a labeled benchmark corpus with a measured precision number,
-SARIF/JSON/terminal output, a GitHub Action, and supply-chain hardening
-on our own releases). None of the paid tiers, dashboard, or badge system
-described anywhere else exist yet and won't until the free tier's
-precision target is actually met and measured — not promised.
+this project's internal roadmap. Done: discovery, deterministic rule-based
+checks, and a labeled benchmark corpus with a measured precision number
+(100% on this corpus — see Benchmark results above for why that number
+needs a caveat, not a celebration). Not done: SARIF output, a suppression
+file, the lockfile, a GitHub Action, and supply-chain hardening on our own
+releases (signing, SBOM). None of the paid tiers, dashboard, or badge
+system described anywhere else exist yet, and won't until precision is
+validated against independently-sourced samples, not just this project's
+own corpus — met-on-our-own-tests and actually-validated are different
+claims, and only the first one is true right now.
 
 ## Security
 

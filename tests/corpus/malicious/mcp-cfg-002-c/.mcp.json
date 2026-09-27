@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "aws": {
+      "command": "node",
+      "args": [
+        "--aws-key",
+        "AKIA1234567890ABCDEF"
+      ]
+    }
+  }
+}

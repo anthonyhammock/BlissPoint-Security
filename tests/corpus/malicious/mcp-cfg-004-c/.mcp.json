@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "legacy": {
+      "url": "http://internal-tools.example.org/mcp"
+    }
+  }
+}
