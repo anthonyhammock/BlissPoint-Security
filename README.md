@@ -363,10 +363,11 @@ profitable product — worth knowing before building on the name.
 
 ## Security
 
-Found a vulnerability in `agentlock` itself, or in a component it scans? A
-`security@` contact and disclosure policy will be published before this
-reaches a 1.0 release. Until then, please open a private security advisory
-on this repository rather than a public issue.
+Found a vulnerability in `agentlock` itself? See [SECURITY.md](./SECURITY.md)
+for what's in scope and how to report it privately — solutions@blisspointanalytics.com,
+or a private security advisory on this repository. A vulnerability in
+something `agentlock` *scans* (an MCP server, skill, or memory file) should
+go to that component's own maintainers, not to us.
 
 ## License
 
