@@ -47,7 +47,7 @@ describe('benchmark corpus', () => {
   })
 
   it(`meets the ${PRECISION_TARGET * 100}% precision target`, () => {
-    const isolatedHome = mkdtempSync(join(tmpdir(), 'agentlock-bench-home-'))
+    const isolatedHome = mkdtempSync(join(tmpdir(), 'blisspoint-security-bench-home-'))
     try {
       const maliciousIds = sampleIds(MALICIOUS_DIR)
       const cleanIds = sampleIds(CLEAN_DIR)
@@ -99,7 +99,7 @@ describe('benchmark corpus', () => {
   })
 
   it('catches at least one sample for every rule ID in the malicious corpus (coverage, not just aggregate precision)', () => {
-    const isolatedHome = mkdtempSync(join(tmpdir(), 'agentlock-bench-home-'))
+    const isolatedHome = mkdtempSync(join(tmpdir(), 'blisspoint-security-bench-home-'))
     try {
       const ruleIdsSeen = new Set<string>()
       for (const id of sampleIds(MALICIOUS_DIR)) {

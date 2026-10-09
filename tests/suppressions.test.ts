@@ -7,7 +7,7 @@ import { loadSuppressions, applySuppressions, addSuppression, SUPPRESSIONS_FILEN
 import type { Finding } from '../src/rules/types.js'
 
 function makeProjectDir(): string {
-  return mkdtempSync(join(tmpdir(), 'agentlock-suppressions-test-'))
+  return mkdtempSync(join(tmpdir(), 'blisspoint-security-suppressions-test-'))
 }
 
 function finding(overrides: Partial<Finding>): Finding {

@@ -1,4 +1,4 @@
-name: agentlock self-scan
+name: BlissPoint AI Security self-scan
 
 # Dogfooding: this repo scans itself with its own action on every push and
 # PR to main, plus a weekly run so drift (a dependency update, a changed

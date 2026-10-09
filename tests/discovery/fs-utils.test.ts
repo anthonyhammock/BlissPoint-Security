@@ -22,7 +22,7 @@ describe('fs-utils', () => {
   })
 
   it('listFilesRecursive finds nested files with paths relative to the root', () => {
-    dir = mkdtempSync(join(tmpdir(), 'agentlock-fsutils-'))
+    dir = mkdtempSync(join(tmpdir(), 'blisspoint-security-fsutils-'))
     writeFile(join(dir, 'a.txt'), '1')
     writeFile(join(dir, 'sub', 'b.txt'), '2')
 
@@ -30,7 +30,7 @@ describe('fs-utils', () => {
   })
 
   it('readJsonFile reports a structured error for invalid JSON rather than throwing', () => {
-    dir = mkdtempSync(join(tmpdir(), 'agentlock-fsutils-'))
+    dir = mkdtempSync(join(tmpdir(), 'blisspoint-security-fsutils-'))
     const path = join(dir, 'bad.json')
     writeFile(path, '{ oops')
 
@@ -39,7 +39,7 @@ describe('fs-utils', () => {
   })
 
   it('readJsonFile parses valid JSON', () => {
-    dir = mkdtempSync(join(tmpdir(), 'agentlock-fsutils-'))
+    dir = mkdtempSync(join(tmpdir(), 'blisspoint-security-fsutils-'))
     const path = join(dir, 'good.json')
     writeFile(path, '{"a": 1}')
 

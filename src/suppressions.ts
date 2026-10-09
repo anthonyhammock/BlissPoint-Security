@@ -1,4 +1,4 @@
-// Suppression file: .agentlock-suppressions.json at the project root.
+// Suppression file: .blisspoint-security-suppressions.json at the project root.
 // Section 5.3's requirement is specific — "a required justification for
 // each entry (auditors like this)" — so this is deliberately exact-match
 // (one entry silences one rule on one file), not glob-based. A wildcard
@@ -13,7 +13,7 @@ import { writeFileSync } from 'node:fs'
 import { readJsonFile, fileExists } from './discovery/fs-utils.js'
 import type { Finding } from './rules/types.js'
 
-export const SUPPRESSIONS_FILENAME = '.agentlock-suppressions.json'
+export const SUPPRESSIONS_FILENAME = '.blisspoint-security-suppressions.json'
 
 export interface SuppressionEntry {
   ruleId: string
@@ -101,7 +101,7 @@ export function applySuppressions(findings: Finding[], entries: SuppressionEntry
   return { active, suppressed }
 }
 
-/** Appends a new, validated entry to the suppression file, creating it if it doesn't exist yet. Used by `agentlock suppress`. */
+/** Appends a new, validated entry to the suppression file, creating it if it doesn't exist yet. Used by `blisspoint-security suppress`. */
 export function addSuppression(projectDir: string, entry: SuppressionEntry): void {
   const path = join(projectDir, SUPPRESSIONS_FILENAME)
   const existing = loadSuppressions(projectDir)

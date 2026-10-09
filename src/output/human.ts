@@ -42,7 +42,7 @@ function describeItem(item: DiscoveredItem): string {
 
 export function formatInventoryHuman(inventory: Inventory): string {
   const lines: string[] = []
-  lines.push('agentlock — inventory of what your AI agent will load automatically')
+  lines.push('blisspoint-security — inventory of what your AI agent will load automatically')
   lines.push('='.repeat(72))
   lines.push('')
   lines.push(
@@ -157,7 +157,7 @@ export function formatScanResultHuman(result: ScanResult): string {
 }
 
 export function formatSuppressedHuman(suppressed: { finding: Finding; entry: SuppressionEntry }[]): string {
-  const lines: string[] = ['', `Suppressed (${suppressed.length}) — see .agentlock-suppressions.json`, '='.repeat(72)]
+  const lines: string[] = ['', `Suppressed (${suppressed.length}) — see .blisspoint-security-suppressions.json`, '='.repeat(72)]
   for (const { finding, entry } of suppressed) {
     lines.push(`  ${finding.ruleId} on ${entry.path}`)
     lines.push(`    Reason: ${entry.justification}`)

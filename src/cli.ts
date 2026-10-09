@@ -10,12 +10,12 @@ import { buildLockEntries, diffLockfile, loadLockfile, lockDiffToFindings, write
 const SEVERITY_ORDER: Finding['severity'][] = ['info', 'medium', 'high', 'critical']
 
 function printUsage(): void {
-  console.log(`agentlock — finds what your AI coding agent will load automatically, and flags what looks risky before it loads it.
+  console.log(`blisspoint-security — finds what your AI coding agent will load automatically, and flags what looks risky before it loads it.
 
 Usage:
-  agentlock scan [options]
-  agentlock lock [--dir <path>]
-  agentlock suppress <rule-id> <path> --reason "<justification>"
+  blisspoint-security scan [options]
+  blisspoint-security lock [--dir <path>]
+  blisspoint-security suppress <rule-id> <path> --reason "<justification>"
 
 scan options:
   --json              Print inventory + findings as machine-readable JSON instead of a human-readable report.
@@ -38,7 +38,7 @@ What "scan" does:
 What "lock" does:
   Records a content hash of every project-scoped MCP config, Agent Skill,
   and memory file to ${LOCKFILE_FILENAME}, as a baseline of what you've
-  reviewed. Run "agentlock scan --verify" later to catch anything that
+  reviewed. Run "blisspoint-security scan --verify" later to catch anything that
   showed up, changed, or disappeared since — including a "rug pull" where
   something you already approved quietly changes on disk. Commit this file
   so the baseline is shared and checked in CI, the same way you would a
@@ -49,7 +49,7 @@ What "suppress" does:
   specific rule stops firing on a specific file. A justification is
   required — this file is meant to be reviewable by an auditor, and an
   unexplained suppression defeats that. Example:
-    agentlock suppress TXT-002 docs/prompt-injection-writeup.md --reason "Documentation about the attack, not an instruction."
+    blisspoint-security suppress TXT-002 docs/prompt-injection-writeup.md --reason "Documentation about the attack, not an instruction."
 `)
 }
 
@@ -132,7 +132,7 @@ function runScan(argv: string[]): void {
     const { entries: lockEntries, errors: lockErrors } = loadLockfile(projectDir)
     for (const error of lockErrors) console.error(`Warning: ${error}`)
     if (lockEntries.length === 0 && lockErrors.length === 0) {
-      console.error(`Warning: no ${LOCKFILE_FILENAME} found — run "agentlock lock" first to create a baseline before drift can be checked.`)
+      console.error(`Warning: no ${LOCKFILE_FILENAME} found — run "blisspoint-security lock" first to create a baseline before drift can be checked.`)
     } else {
       const diff = diffLockfile(inventory, lockEntries)
       scanResult.findings = sortFindings([...scanResult.findings, ...lockDiffToFindings(diff, projectDir)])
@@ -170,7 +170,7 @@ function runScan(argv: string[]): void {
 function runSuppress(argv: string[]): void {
   const args = parseSuppressArgs(argv)
   if (!args.ruleId || !args.path || !args.reason) {
-    console.error('Usage: agentlock suppress <rule-id> <path> --reason "<justification>"')
+    console.error('Usage: blisspoint-security suppress <rule-id> <path> --reason "<justification>"')
     process.exit(1)
   }
   const projectDir = args.dir ?? process.cwd()
@@ -221,7 +221,7 @@ function main(): void {
   } else if (command === 'suppress') {
     runSuppress(rest)
   } else {
-    console.error(`Unknown command "${command}". Run "agentlock --help" for usage.`)
+    console.error(`Unknown command "${command}". Run "blisspoint-security --help" for usage.`)
     process.exitCode = 1
   }
 }

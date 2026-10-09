@@ -18,7 +18,7 @@ export interface TestWorkspace {
 }
 
 export function makeWorkspace(platform: NodeJS.Platform = 'linux', env: NodeJS.ProcessEnv = {}): TestWorkspace {
-  const root = mkdtempSync(join(tmpdir(), 'agentlock-test-'))
+  const root = mkdtempSync(join(tmpdir(), 'blisspoint-security-test-'))
   const projectDir = join(root, 'project')
   const homeDir = join(root, 'home')
   mkdirSync(projectDir, { recursive: true })

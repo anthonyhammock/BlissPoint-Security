@@ -68,7 +68,7 @@ export function toSarif(result: ScanResult): object {
       {
         tool: {
           driver: {
-            name: 'agentlock',
+            name: 'BlissPoint AI Security',
             version: result.rulesVersion,
             informationUri: 'https://github.com/anthonyhammock/BlissPoint-Security',
             rules,

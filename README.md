@@ -1,6 +1,8 @@
-# agentlock
+# BlissPoint AI Security
 
 **A local-first scanner for everything your AI coding agent loads automatically.**
+
+Command-line tool: `blisspoint-security` (npm package `@blisspointanalytics/ai-security`).
 
 ## What this is, in plain English
 
@@ -14,7 +16,7 @@ these things: servers with no authentication, skills bundling malicious
 scripts, and instruction files quietly poisoned to make an agent misbehave
 persistently.
 
-`agentlock` finds all of it, on your own machine, and tells you which parts
+`blisspoint-security` finds all of it, on your own machine, and tells you which parts
 look worth a second look — in language a manager with no security
 background can act on, not just a security engineer.
 
@@ -29,37 +31,38 @@ value — it comes with a real caveat, not just a headline percentage.
 ## Install
 
 ```bash
-npx agentlock scan
+npx @blisspointanalytics/ai-security scan
 ```
 
 (Not yet published to npm — see Status below. Once published, no separate
-install step is needed; `npx` fetches and runs it.)
+install step is needed; `npx` fetches and runs it. The examples below assume
+it's installed, where the command is just `blisspoint-security`.)
 
 ## Usage
 
 ```bash
-agentlock scan                          # human-readable inventory + findings for the current directory
-agentlock scan --json                   # machine-readable inventory + findings
-agentlock scan --dir ./somewhere        # scan a different project directory
-agentlock scan --fail-on critical       # only exit non-zero for critical findings (default: high)
-agentlock scan --fail-on none           # always exit 0, regardless of findings (for a first look)
-agentlock scan --sarif results.sarif    # also write results in SARIF 2.1.0 to this file
-agentlock scan --verify                 # also flag drift against agent-lock.json (see Lockfile below)
+blisspoint-security scan                          # human-readable inventory + findings for the current directory
+blisspoint-security scan --json                   # machine-readable inventory + findings
+blisspoint-security scan --dir ./somewhere        # scan a different project directory
+blisspoint-security scan --fail-on critical       # only exit non-zero for critical findings (default: high)
+blisspoint-security scan --fail-on none           # always exit 0, regardless of findings (for a first look)
+blisspoint-security scan --sarif results.sarif    # also write results in SARIF 2.1.0 to this file
+blisspoint-security scan --verify                 # also flag drift against agent-lock.json (see Lockfile below)
 
-agentlock lock [--dir ./somewhere]      # record a baseline of what's here now
-agentlock suppress <rule-id> <path> --reason "<justification>"
+blisspoint-security lock [--dir ./somewhere]      # record a baseline of what's here now
+blisspoint-security suppress <rule-id> <path> --reason "<justification>"
 ```
 
 The exit code is non-zero whenever an *active* (non-suppressed) finding at
 or above `--fail-on`'s threshold exists — this is what the GitHub Action
-(below) wires into CI, and it's usable today via `agentlock scan || echo
+(below) wires into CI, and it's usable today via `blisspoint-security scan || echo
 "found something"` in your own scripts.
 
 ### GitHub Action
 
 ```yaml
-# .github/workflows/agentlock.yml
-name: agentlock
+# .github/workflows/blisspoint-security.yml
+name: BlissPoint AI Security
 on: [push, pull_request]
 
 permissions:
@@ -77,7 +80,7 @@ jobs:
           # verify: true    # uncomment once you've committed agent-lock.json
 ```
 
-This checks out the calling repo, builds `agentlock` from source (it isn't
+This checks out the calling repo, builds `blisspoint-security` from source (it isn't
 on npm yet — see Status), runs a scan, uploads the SARIF to that repo's own
 Security > Code scanning tab via `github/codeql-action/upload-sarif`, and
 fails the job if anything met the `fail-on` threshold. `security-events:
@@ -90,7 +93,7 @@ upload-sarif step there may fail even though the scan itself still ran.
 
 ### SARIF output
 
-`agentlock scan --sarif results.sarif` writes the same findings in
+`blisspoint-security scan --sarif results.sarif` writes the same findings in
 [SARIF 2.1.0](https://docs.oasis-open.org/sarif/sarif/v2.1.0/), the format
 GitHub's code scanning UI understands natively — this is what the GitHub
 Action above hands to `github/codeql-action/upload-sarif`, so findings show
@@ -107,10 +110,10 @@ and each individual result carries its own mapping in
 ### Suppressing a finding
 
 ```bash
-agentlock suppress TXT-002 docs/prompt-injection-writeup.md --reason "Documentation about the attack, not an instruction."
+blisspoint-security suppress TXT-002 docs/prompt-injection-writeup.md --reason "Documentation about the attack, not an instruction."
 ```
 
-This appends an entry to `.agentlock-suppressions.json` at the project
+This appends an entry to `.blisspoint-security-suppressions.json` at the project
 root — commit that file so the suppression applies in CI too. Each entry
 matches one rule ID against one file (by path relative to the project
 root), never a glob: this file is meant to be reviewable by an auditor, and
@@ -122,13 +125,13 @@ separated out from the active findings that count toward `--fail-on` and
 SARIF:
 
 ```
-Suppressed (1) — see .agentlock-suppressions.json
+Suppressed (1) — see .blisspoint-security-suppressions.json
 ========================================================================
   TXT-002 on docs/prompt-injection-writeup.md
     Reason: Documentation about the attack, not an instruction.
 ```
 
-Example `.agentlock-suppressions.json`:
+Example `.blisspoint-security-suppressions.json`:
 
 ```json
 {
@@ -154,13 +157,13 @@ rug-pulling you, but nothing stops the file itself from changing on disk.
 The lockfile closes that gap:
 
 ```bash
-agentlock lock                 # record a content-hash baseline of everything found now
-agentlock scan --verify        # compare the current state against that baseline
+blisspoint-security lock                 # record a content-hash baseline of everything found now
+blisspoint-security scan --verify        # compare the current state against that baseline
 ```
 
-`agentlock lock` writes `agent-lock.json` at the project root — a sha256 of
+`blisspoint-security lock` writes `agent-lock.json` at the project root — a sha256 of
 every **project-scoped** MCP config, Agent Skill, and memory file. Commit
-it, the same way you'd commit a dependency lockfile. `agentlock scan
+it, the same way you'd commit a dependency lockfile. `blisspoint-security scan
 --verify` then diffs the current inventory against it and reports, as
 ordinary findings (suppressible, SARIF-exportable, counted toward
 `--fail-on`, same as any other finding):
@@ -186,7 +189,7 @@ failing — there's nothing to compare against yet until you run `lock` once.
 ## Example output
 
 ```
-agentlock — inventory of what your AI agent will load automatically
+blisspoint-security — inventory of what your AI agent will load automatically
 ========================================================================
 ...
 Summary: 2 MCP servers, 1 Agent Skill, 0 memory files.
@@ -352,21 +355,21 @@ caveat, not a celebration), SARIF output, a suppression file, a lockfile
 for drift detection, and a GitHub Action (which this repo also uses on
 itself — see `.github/workflows/self-scan.yml`). Not done: supply-chain
 hardening on our own releases (signing, SBOM) and publishing to npm, so the
-Action currently builds `agentlock` from source on every run rather than
+Action currently builds `blisspoint-security` from source on every run rather than
 installing a released version. None of the paid tiers, dashboard, or badge
 system described anywhere else exist yet, and won't until precision is
 validated against independently-sourced samples, not just this project's
 own corpus — met-on-our-own-tests and actually-validated are different
 claims, and only the first one is true right now. No trademark has been
-filed for the `agentlock` name, and none is planned unless this becomes a
+filed for the `blisspoint-security` name, and none is planned unless this becomes a
 profitable product — worth knowing before building on the name.
 
 ## Security
 
-Found a vulnerability in `agentlock` itself? See [SECURITY.md](./SECURITY.md)
+Found a vulnerability in `blisspoint-security` itself? See [SECURITY.md](./SECURITY.md)
 for what's in scope and how to report it privately — solutions@blisspointanalytics.com,
 or a private security advisory on this repository. A vulnerability in
-something `agentlock` *scans* (an MCP server, skill, or memory file) should
+something `blisspoint-security` *scans* (an MCP server, skill, or memory file) should
 go to that component's own maintainers, not to us.
 
 ## License

@@ -27,7 +27,7 @@ describe('toSarif', () => {
     expect(sarif.version).toBe('2.1.0')
     expect(sarif.$schema).toContain('sarif-schema-2.1.0.json')
     expect(sarif.runs).toHaveLength(1)
-    expect(sarif.runs[0].tool.driver.name).toBe('agentlock')
+    expect(sarif.runs[0].tool.driver.name).toBe('BlissPoint AI Security')
     expect(sarif.runs[0].tool.driver.version).toBe('0.1.0')
   })
 

@@ -1,12 +1,20 @@
 {
-  "name": "agentlock",
+  "name": "@blisspointanalytics/ai-security",
   "version": "0.1.0",
   "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
-  "description": "A local-first scanner and lockfile for everything an AI coding agent loads: MCP servers, Agent Skills, config files, and memory files. Finds malicious or vulnerable components before they run.",
+  "description": "BlissPoint AI Security — a local-first scanner and lockfile for everything an AI coding agent loads: MCP servers, Agent Skills, config files, and memory files. Finds malicious or vulnerable components before they run.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/anthonyhammock/BlissPoint-Security.git"
+  },
+  "homepage": "https://blisspointanalytics.com/security",
   "bin": {
-    "agentlock": "./bin/agentlock.mjs"
+    "blisspoint-security": "./bin/blisspoint-security.mjs"
   },
   "engines": {
     "node": ">=20"

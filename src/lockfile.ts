@@ -1,8 +1,8 @@
 // Content-hash lockfile for supply-chain drift detection — the same idea
-// as package-lock.json's hash pinning, applied to everything agentlock
-// discovers, not just npm/PyPI packages. `agentlock lock` records a sha256
+// as package-lock.json's hash pinning, applied to everything blisspoint-security
+// discovers, not just npm/PyPI packages. `blisspoint-security lock` records a sha256
 // of every project-scoped MCP config, Agent Skill, and memory file as a
-// baseline; `agentlock scan --verify` diffs the current state against that
+// baseline; `blisspoint-security scan --verify` diffs the current state against that
 // baseline and flags anything new, changed, or gone since.
 //
 // This catches a real gap MCP-CFG-001 (unpinned npx/uvx) doesn't: a
@@ -200,8 +200,8 @@ const LOCK_RULES = {
     owasp: ['AST-02'],
     title: 'New item found since the last lockfile baseline',
     plainEnglish:
-      'This MCP server, Agent Skill, or memory file exists now but was not present the last time "agentlock lock" recorded a baseline — nobody has reviewed it as part of this project\'s trusted surface yet.',
-    fix: 'Review what this is and what it can do. Once you\'re satisfied, run "agentlock lock" again to add it to the baseline.',
+      'This MCP server, Agent Skill, or memory file exists now but was not present the last time "blisspoint-security lock" recorded a baseline — nobody has reviewed it as part of this project\'s trusted surface yet.',
+    fix: 'Review what this is and what it can do. Once you\'re satisfied, run "blisspoint-security lock" again to add it to the baseline.',
   },
   modified: {
     id: 'LOCK-002',
@@ -209,8 +209,8 @@ const LOCK_RULES = {
     owasp: ['AST-07'],
     title: 'Content changed since the last lockfile baseline',
     plainEnglish:
-      'This file\'s content no longer matches what "agentlock lock" last recorded — the same server, skill, or memory file you previously reviewed now contains different instructions, code, or configuration. This is exactly how a "rug pull" works: something trusted quietly changes after the fact.',
-    fix: 'Compare this against your last reviewed version before trusting it again. If the change is expected, run "agentlock lock" to update the baseline.',
+      'This file\'s content no longer matches what "blisspoint-security lock" last recorded — the same server, skill, or memory file you previously reviewed now contains different instructions, code, or configuration. This is exactly how a "rug pull" works: something trusted quietly changes after the fact.',
+    fix: 'Compare this against your last reviewed version before trusting it again. If the change is expected, run "blisspoint-security lock" to update the baseline.',
   },
   removed: {
     id: 'LOCK-003',
@@ -218,8 +218,8 @@ const LOCK_RULES = {
     owasp: [],
     title: 'A previously locked item is no longer present',
     plainEnglish:
-      'This item was in the last "agentlock lock" baseline but was not found in this scan — it may have been deleted, renamed, or moved.',
-    fix: 'If this is expected, run "agentlock lock" again to update the baseline and drop the stale entry.',
+      'This item was in the last "blisspoint-security lock" baseline but was not found in this scan — it may have been deleted, renamed, or moved.',
+    fix: 'If this is expected, run "blisspoint-security lock" again to update the baseline and drop the stale entry.',
   },
 } as const satisfies Record<'new' | 'modified' | 'removed', RuleMeta>
 

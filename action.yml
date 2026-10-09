@@ -1,4 +1,4 @@
-name: 'agentlock scan'
+name: 'BlissPoint AI Security'
 description: >-
   Finds every MCP server, Agent Skill, and memory file an AI coding agent
   (Claude Code, Claude Desktop, Cursor) will load automatically, flags what
@@ -9,7 +9,7 @@ branding:
   icon: 'shield'
   color: 'purple'
 
-# Prerequisites for the calling workflow (agentlock can't grant these to
+# Prerequisites for the calling workflow (blisspoint-security can't grant these to
 # itself — only the job that uses this action can):
 #   permissions:
 #     contents: read
@@ -28,7 +28,7 @@ inputs:
     required: false
     default: 'high'
   verify:
-    description: 'Also check drift against a committed agent-lock.json (see the README''s Lockfile section). Requires the repo to have run `agentlock lock` at least once.'
+    description: 'Also check drift against a committed agent-lock.json (see the README''s Lockfile section). Requires the repo to have run `blisspoint-security lock` at least once.'
     required: false
     default: 'false'
   upload-sarif:
@@ -49,21 +49,21 @@ runs:
       with:
         node-version: '20'
 
-    # agentlock isn't published to npm yet (see the README's Status
+    # blisspoint-security isn't published to npm yet (see the README's Status
     # section), so the action builds itself from the source checked out at
     # github.action_path — the runner does this checkout automatically for
     # any action referenced via `uses:`, no explicit step needed here.
-    - name: Install agentlock's own dependencies
+    - name: Install blisspoint-security's own dependencies
       shell: bash
       run: npm ci
       working-directory: ${{ github.action_path }}
 
-    - name: Build agentlock
+    - name: Build blisspoint-security
       shell: bash
       run: npm run build
       working-directory: ${{ github.action_path }}
 
-    - name: Run agentlock scan
+    - name: Run blisspoint-security scan
       id: scan
       shell: bash
       run: |
@@ -71,7 +71,7 @@ runs:
         if [ -n "${{ inputs.dir }}" ] && [ "${{ inputs.dir }}" != "." ]; then
           SCAN_DIR="${{ github.workspace }}/${{ inputs.dir }}"
         fi
-        SARIF_PATH="${{ github.workspace }}/agentlock-results.sarif"
+        SARIF_PATH="${{ github.workspace }}/blisspoint-security-results.sarif"
 
         ARGS=(scan --dir "$SCAN_DIR" --fail-on "${{ inputs.fail-on }}" --sarif "$SARIF_PATH")
         if [ "${{ inputs.verify }}" = "true" ]; then
