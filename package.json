@@ -16,6 +16,13 @@
   "bin": {
     "blisspoint-security": "./bin/blisspoint-security.mjs"
   },
+  "files": [
+    "bin",
+    "dist",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md"
+  ],
   "engines": {
     "node": ">=20"
   },
